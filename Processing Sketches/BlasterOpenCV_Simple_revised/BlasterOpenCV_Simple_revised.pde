@@ -1,9 +1,6 @@
 import gab.opencv.*;
 
 import processing.video.*;
-
-//import codeanticode.gsvideo.*; 
-//import monclubelec.javacvPro.*; 
 import java.awt.*; 
 import processing.serial.*;
 
