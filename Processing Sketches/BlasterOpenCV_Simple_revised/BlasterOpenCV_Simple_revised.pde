@@ -1,5 +1,4 @@
 import gab.opencv.*;
-
 import processing.video.*;
 import java.awt.*; 
 import processing.serial.*;
@@ -7,13 +6,12 @@ import processing.serial.*;
 PImage img;
 Rectangle[] faceRect; 
 
-//GSCapture cam; 
 Capture cam;
 OpenCV opencv; 
 
-int widthCapture=640; 
-int heightCapture=480;
-int fpsCapture=30; 
+int widthCapture=320; 
+int heightCapture=240;
+int fpsCapture=15; 
 int spos=90;
 
 int targetCenterX;
@@ -33,25 +31,27 @@ boolean isFound = false;
 
 void setup()
 { 
-  size (640, 480); 
+  size (320, 240); 
   frameRate(fpsCapture); 
   background(0);
 
   cam = new Capture(this, widthCapture, heightCapture);
-  //cam = new GSCapture(this, widthCapture, heightCapture, "0"); 
+
   cam.start(); 
 
   opencv = new OpenCV(this, widthCapture, heightCapture); 
-  //opencv.allocate(widthCapture, heightCapture); 
 
   //Comment or delete the platform you're NOT on.
   opencv.loadCascade(OpenCV.CASCADE_FRONTALFACE);    //Windows location
 
 
   println(Serial.list()); 
-  port = new Serial(this, Serial.list()[0], 57600); 
+  port = new Serial(this, "COM16", 57600); 
+  println("Serial open");
   port.write("c"); 
+  println("Serial open");
   delay(1000);
+  println("Serial open");
 }
 
 void  draw() 
@@ -94,13 +94,13 @@ void  draw()
     //Handle rotation
     if (targetCenterX < thresholdLeft)
     {
-      port.write("-");
-      // delay(70);
+      port.write("+");
+      //gdelay(70);
     }
     if (targetCenterX > thresholdRight)
     {
-      port.write("+");
-      // delay(70);
+      port.write("-");
+      //delay(70);
     }
 
     //Fire
