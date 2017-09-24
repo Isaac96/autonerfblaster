@@ -11,7 +11,7 @@ OpenCV opencv;
 
 int widthCapture=320; 
 int heightCapture=240;
-int fpsCapture=15; 
+int fpsCapture=30; 
 int spos=90;
 
 int targetCenterX;
@@ -28,6 +28,7 @@ int circleWidth = 3;
 
 boolean isFiring = false;
 boolean isFound = false;
+boolean manual = false;
 
 void setup()
 { 
@@ -46,11 +47,11 @@ void setup()
 
 
   println(Serial.list()); 
-  port = new Serial(this, "COM16", 57600); 
+  port = new Serial(this, Serial.list()[2], 57600); 
   println("Serial open");
   port.write("c"); 
   println("Serial open");
-  delay(1000);
+  //delay(1000);
   println("Serial open");
 }
 
@@ -78,7 +79,7 @@ void  draw()
   line(thresholdLeft, 0, thresholdLeft, heightCapture); //left line
   line(thresholdRight, 0, thresholdRight, heightCapture); //right line
 
-  if ((faceRect != null) && (faceRect.length != 0))
+  if ((faceRect != null) && (faceRect.length != 0) && !manual)
   {
     isFound = true;
     //Get center point of identified target
@@ -94,38 +95,60 @@ void  draw()
     //Handle rotation
     if (targetCenterX < thresholdLeft)
     {
-      port.write("+");
-      //gdelay(70);
+      if (!manual) {
+        port.write("+");
+        //gdelay(70);
+      }
     }
     if (targetCenterX > thresholdRight)
     {
-      port.write("-");
-      //delay(70);
+      if (!manual) {
+        port.write("-");
+        //delay(70);
+      }
     }
 
     //Fire
     if ((targetCenterX >= thresholdLeft) && (targetCenterX <= thresholdRight))
     {
-      port.write("f");
-      isFiring = true;
-      println("Gotem");
-      noFill();
-      //strokeWeight(2);
-      //stroke(255,255,255, 128);
-      //ellipse(targetCenterX, targetCenterY, faceRect[0].width+circleExpand+15, faceRect[0].height+circleExpand+ 15);
+      if (!manual) {
+        //port.write("f");
+        isFiring = true;
+        println("Gotem");
+        noFill();
+        //strokeWeight(2);
+        //stroke(255,255,255, 128);
+        //ellipse(targetCenterX, targetCenterY, faceRect[0].width+circleExpand+15, faceRect[0].height+circleExpand+ 15);
+      }
     } else
     {
       isFiring = false;
     }
-  } else {
-    isFiring = false;
-  }
+  } 
   if (isFiring) 
   {
     tint(255, 0, 0);
+    port.write("f");
   } else
   {
     noTint();
   }
   //delay(40);
+}
+void keyPressed() {
+  if (key == 'm') {
+    manual = !manual;
+    println("manual mode toggled");
+    isFiring = false;
+  } else if (key == 'a' && manual) {
+    port.write("+");
+    println("left");
+  } else if (key == 'f' && manual) {
+    isFiring = !isFiring;
+  } else if (key == 'd' && manual) {
+    port.write("-");
+    println("right");
+  } else {
+    println(key);
+  }
 }
