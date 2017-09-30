@@ -1,18 +1,24 @@
+import processing.io.*;
 import gab.opencv.*;
 import processing.video.*;
 import java.awt.*; 
-import processing.serial.*;
 
 PImage img;
 Rectangle[] faceRect; 
 
 Capture cam;
 OpenCV opencv; 
+SoftwareServo panServo;
+SoftwareServo trigServo;
 
 int widthCapture=320; 
 int heightCapture=240;
 int fpsCapture=30; 
-int spos=90;
+int panpos=90;
+int firePos = 80;
+int readyPos = 0;
+long time;
+int wait = 500;
 
 int targetCenterX;
 int targetCenterY;
@@ -21,7 +27,7 @@ int threshold = 20;
 int thresholdLeft;
 int thresholdRight;
 int moveIncrement = 2;
-Serial port;
+
 
 int circleExpand = 20;
 int circleWidth = 3;
@@ -35,32 +41,32 @@ void setup()
   size (320, 240); 
   frameRate(fpsCapture); 
   background(0);
+  panServo = new SoftwareServo(this);
+  trigServo = new SoftwareServo(this);
+  panServo.attach(17);
+  trigServo.attach(4);
 
   cam = new Capture(this, widthCapture, heightCapture);
-
   cam.start(); 
 
   opencv = new OpenCV(this, widthCapture, heightCapture); 
-
-  //Comment or delete the platform you're NOT on.
-  opencv.loadCascade(OpenCV.CASCADE_FRONTALFACE);    //Windows location
-
-
-  println(Serial.list()); 
-  port = new Serial(this, Serial.list()[2], 57600); 
-  println("Serial open");
-  port.write("c"); 
-  println("Serial written to");
+  opencv.loadCascade(OpenCV.CASCADE_FRONTALFACE);
 }
 
 void  draw() 
 {
+  if (millis() - time >= wait)
+  {
+    trigServo.write(readyPos);
+    isFiring = false;
+  }
   if (isFiring) 
   {
+    trigServo.write(firePos);
     tint(255, 0, 0);
-    port.write("f");
   } else
   {
+    trigServo.write(readyPos);
     noTint();
   }
   if (cam.available() == true) 
@@ -85,7 +91,7 @@ void  draw()
   line(thresholdLeft, 0, thresholdLeft, heightCapture); //left line
   line(thresholdRight, 0, thresholdRight, heightCapture); //right line
 
-  if ((faceRect != null) && (faceRect.length != 0) && !manual)
+  if ((faceRect != null) && (faceRect.length != 0))
   {
     isFound = true;
     //Get center point of identified target
@@ -97,44 +103,28 @@ void  draw()
     strokeWeight(circleWidth);
     stroke(255, 255, 255);
     ellipse(targetCenterX, targetCenterY, faceRect[0].width+circleExpand, faceRect[0].height+circleExpand);
-
-    //Handle rotation
-    if (targetCenterX < thresholdLeft)
-    {
-      if (!manual) {
-        port.write("+");
+    if (!manual) {
+      //Handle rotation
+      if (targetCenterX < thresholdLeft)
+      {
+        panpos -=  moveIncrement;
         //delay(70);
       }
-    }
-    if (targetCenterX > thresholdRight)
-    {
-      if (!manual) {
-        port.write("-");
+      if (targetCenterX > thresholdRight)
+      {
+        panpos+=  moveIncrement;
         //delay(70);
       }
-    }
 
-    //Fire
-    if ((targetCenterX >= thresholdLeft) && (targetCenterX <= thresholdRight))
-    {
-      if (!manual) {
-        //port.write("f");
+      //Fire
+      if ((targetCenterX >= thresholdLeft) && (targetCenterX <= thresholdRight))
+      {
         isFiring = true;
         println("Gotem");
         noFill();
-        //strokeWeight(2);
-        //stroke(255,255,255, 128);
-        //ellipse(targetCenterX, targetCenterY, faceRect[0].width+circleExpand+15, faceRect[0].height+circleExpand+ 15);
       }
-    } else
-    {
-      isFiring = false;
     }
-  } else { 
-    isFiring = false;
   }
-
-  //delay(40);
 }
 void keyPressed() {
   if (key == 'm') {
@@ -142,16 +132,16 @@ void keyPressed() {
     println("manual mode toggled");
     isFiring = false;
   } else if (key == 'a' && manual) {
-    port.write("+");
+    panpos-= moveIncrement;
     println("left");
   } else if (key == 'f' && manual) {
     isFiring = !isFiring;
   } else if (key == 'd' && manual) {
-    port.write("-");
+    panpos+= moveIncrement;
     println("right");
   } else if (key == 'c' )
   {
-    port.write("c");
+    panServo.write(90);
   } else {
     println(key);
   }
